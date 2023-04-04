@@ -79,6 +79,7 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 
 	err = s.repository.Save(&device)
 	if err != nil {
+		WriteErrorResponse(response, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 	createDeviceResponse := CreateSignatureDeviceResponse{
@@ -99,7 +100,7 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 	}
 	device, err := s.repository.FindByID(signRequest.ID)
 	if err != nil {
-		WriteErrorResponse(response, http.StatusBadRequest, []string{"The ID does not exit"})
+		WriteErrorResponse(response, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 	switch device.Algorithm {
@@ -116,12 +117,7 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 			WriteErrorResponse(response, http.StatusBadRequest, []string{"Cannot sign"})
 			return
 		}
-		var lastSignature []byte
-		device.LastSignature = []byte(base64.StdEncoding.EncodeToString(signature))
-		lastSignature = device.LastSignature
-		if device.Counter == 0 {
-			lastSignature = []byte(base64.StdEncoding.EncodeToString([]byte(device.ID.String())))
-		}
+		lastSignature := s.generateLastSignature(device, signature)
 		SignResponse := SignTransactionResponse{
 			Signature:  signature,
 			SignedData: []byte(strconv.Itoa(device.Counter) + "_" + signRequest.Data + "_" + string(lastSignature)),
@@ -142,12 +138,7 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 			WriteErrorResponse(response, http.StatusBadRequest, []string{"Cannot sign"})
 			return
 		}
-		var lastSignature []byte
-		device.LastSignature = []byte(base64.StdEncoding.EncodeToString(signature))
-		lastSignature = device.LastSignature
-		if device.Counter == 0 {
-			lastSignature = []byte(base64.StdEncoding.EncodeToString([]byte(device.ID.String())))
-		}
+		lastSignature := s.generateLastSignature(device, signature)
 		SignResponse := SignTransactionResponse{
 			Signature:  signature,
 			SignedData: []byte(strconv.Itoa(device.Counter) + "_" + signRequest.Data + "_" + string(lastSignature)),
@@ -163,4 +154,15 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 func (s *Server) ListDevices(response http.ResponseWriter) {
 	result, _ := s.repository.FindAll()
 	WriteAPIResponse(response, http.StatusOK, result)
+}
+
+// generateLastSignature return a base 64 encoded signature
+func (s *Server) generateLastSignature(device *domain.Device, signature []byte) []byte {
+	var lastSignature []byte
+	device.LastSignature = []byte(base64.StdEncoding.EncodeToString(signature))
+	lastSignature = device.LastSignature
+	if device.Counter == 0 {
+		lastSignature = []byte(base64.StdEncoding.EncodeToString([]byte(device.ID.String())))
+	}
+	return lastSignature
 }

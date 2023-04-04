@@ -44,6 +44,5 @@ func (r *InMemoryDeviceRepository) FindAll() ([]*domain.Device, error) {
 	for _, device := range r.devices {
 		devices = append(devices, device)
 	}
-
 	return devices, nil
 }
