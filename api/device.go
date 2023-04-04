@@ -21,7 +21,7 @@ type CreateSignatureDeviceResponse struct {
 }
 
 type SignTransactionRequest struct {
-	ID   uuid.UUID `json:"id"`
+	ID   uuid.UUID `json:"id" required:"true"`
 	Data string    `json:"data" required:"true"`
 }
 
