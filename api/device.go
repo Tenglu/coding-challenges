@@ -30,7 +30,7 @@ type SignTransactionResponse struct {
 	SignedData []byte `json:"signed_data"`
 }
 
-// CreateSignatureDevice register signature device
+// CreateSignatureDevice register signature device and return id
 func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *http.Request) {
 	decoder := json.NewDecoder(request.Body)
 	var createDeviceRequest CreateSignatureDeviceRequest
@@ -75,6 +75,9 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 			WriteErrorResponse(response, http.StatusBadRequest, []string{"Error when encoding RSA key pair"})
 			return
 		}
+	default:
+		WriteErrorResponse(response, http.StatusBadRequest, []string{"Algorithm can only be ECC or RSA"})
+		return
 	}
 
 	err = s.repository.Save(&device)
@@ -89,7 +92,7 @@ func (s *Server) CreateSignatureDevice(response http.ResponseWriter, request *ht
 	WriteAPIResponse(response, http.StatusCreated, createDeviceResponse)
 }
 
-// SignTransaction sign
+// SignTransaction sign data by ecc or rsa private key, and return signature and signed_data
 func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Request) {
 	decoder := json.NewDecoder(request.Body)
 	var signRequest SignTransactionRequest
@@ -146,6 +149,9 @@ func (s *Server) SignTransaction(response http.ResponseWriter, request *http.Req
 		device.LastSignature = signature
 		device.Counter++
 		WriteAPIResponse(response, http.StatusCreated, SignResponse)
+	default:
+		WriteErrorResponse(response, http.StatusBadRequest, []string{"Algorithm can only be ECC or RSA"})
+		return
 	}
 
 }
