@@ -46,7 +46,7 @@ func (s *Server) Run() error {
 		}
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	})
-	mux.Handle("/api/v0/sign", http.HandlerFunc(s.SignTransaction))
+	mux.Handle("/api/v0/signature", http.HandlerFunc(s.SignTransaction))
 
 	return http.ListenAndServe(s.listenAddress, mux)
 }
